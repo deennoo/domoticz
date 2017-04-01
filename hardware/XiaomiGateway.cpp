@@ -324,7 +324,7 @@ void XiaomiGateway::InsertUpdateRGBGateway(const std::string & nodeid, const std
 	}
 }
 
-void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::string &Name, const bool bIsOn, const _eSwitchType switchtype, const int level, const std::string messagetype, const bool isctlr2, const bool is2ndchannel)
+void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::string &Name, const bool bIsOn, const _eSwitchType switchtype, const int level, const std::string messagetype, const bool isctlr2, const bool is2ndchannel, const std::string load_power, const std::string power_consumed)
 {
 	// Make sure the ID supplied fits with what is expected ie 158d0000fd32c2
 	if (nodeid.length() < 14) {
@@ -422,13 +422,20 @@ void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::str
 		//if ((((bIsOn && nvalue == 0) || (bIsOn == false && nvalue == 1))) && (messagetype != "heartbeat")) {
 		if (messagetype != "heartbeat") {
 			if ((((bIsOn && nvalue == 0) || (bIsOn == false && nvalue == 1))) || (switchtype == STYPE_Selector)) {
-				m_mainworker.PushAndWaitRxMessage(this, (const unsigned char *)&xcmd, NULL, -1);
+				m_mainworker.PushAndWaitRxMessage(this, (const unsigned char *)&xcmd, NULL, -1);				
 			}
-		}
+		}		
 		else {
 #ifdef _DEBUG
 			_log.Log(LOG_STATUS, "XiaomiGateway: not updating Domoticz for switch as no change from last state");
 #endif
+		}
+		if (Name == "Xiaomi Smart Plug") {
+			if (load_power != "" && power_consumed != "") {
+				int power = atoi(load_power.c_str());
+				int consumed = atoi(power_consumed.c_str())/1000;
+				SendKwhMeter(sID, 1, 255, power, consumed, "Xiaomi Smart Plug Usage");
+			}
 		}
 	}
 }
@@ -772,6 +779,9 @@ void XiaomiGateway::xiaomi_udp_server::handle_receive(const boost::system::error
 						std::string aqara_wireless1 = root2["channel_0"].asString();
 						std::string aqara_wireless2 = root2["channel_1"].asString();
 						std::string aqara_wireless3 = root2["dual_channel"].asString();
+						//Smart plug usage
+						std::string load_power = root2["load_power"].asString();
+						std::string power_consumed = root2["power_consumed"].asString();
 						bool on = false;
 						int level = -1;
 						if (model == "switch") {
@@ -828,21 +838,22 @@ void XiaomiGateway::xiaomi_udp_server::handle_receive(const boost::system::error
 							}
 							on = true;
 							m_XiaomiGateway->InsertUpdateCubeText(sid.c_str(), name, rotate.c_str());
-							m_XiaomiGateway->InsertUpdateSwitch(sid.c_str(), name, on, type, level, cmd);
+							m_XiaomiGateway->InsertUpdateSwitch(sid.c_str(), name, on, type, level, cmd, false, false, "", "");
 						}
-						else {
-							std::string voltage = root2["voltage"].asString();
-							if (voltage != "") {
-								m_XiaomiGateway->InsertUpdateVoltage(sid.c_str(), name, atoi(voltage.c_str()));
+						else {					
+							if (model == "plug" ) {
+								sleep_milliseconds(100); //need to sleep here as the gateway will send 2 update messages, and need time for the database to update the state so that the event is not triggered twice
+								m_XiaomiGateway->InsertUpdateSwitch(sid.c_str(), name, on, type, level, cmd, false, false, load_power, power_consumed);
 							}
 							else {
-								if (model == "plug" ) {
-									sleep_milliseconds(100); //need to sleep here as the gateway will send 2 update messages, and need time for the database to update the state so that the event is not triggered twice
-								}
 								if (level > -1) { //this should stop false updates when empty 'data' is received
-									m_XiaomiGateway->InsertUpdateSwitch(sid.c_str(), name, on, type, level, cmd);
-								}																
-							}
+									m_XiaomiGateway->InsertUpdateSwitch(sid.c_str(), name, on, type, level, cmd, false, false, "", "");
+								}	
+							}							
+						}
+						std::string voltage = root2["voltage"].asString();
+						if (voltage != "") {
+							m_XiaomiGateway->InsertUpdateVoltage(sid.c_str(), name, atoi(voltage.c_str()));
 						}
 					}
 					else if ((name == "Xiaomi Wired Dual Wall Switch") || (name == "Xiaomi Wired Single Wall Switch")) {
@@ -868,10 +879,10 @@ void XiaomiGateway::xiaomi_udp_server::handle_receive(const boost::system::error
 							xctrl = true;
 						}
 						if (aqara_wired1 != "") {
-							m_XiaomiGateway->InsertUpdateSwitch(sid.c_str(), name, state, type, 0, cmd, xctrl, false);
+							m_XiaomiGateway->InsertUpdateSwitch(sid.c_str(), name, state, type, 0, cmd, xctrl, false, "", "");
 						}
 						else if (aqara_wired2 != "") {
-							m_XiaomiGateway->InsertUpdateSwitch(sid.c_str(), name, state, type, 0, cmd, xctrl, true);
+							m_XiaomiGateway->InsertUpdateSwitch(sid.c_str(), name, state, type, 0, cmd, xctrl, true, "", "");
 						}
 					}
 					else if (name == "Xiaomi Temperature/Humidity") {
