@@ -112,6 +112,7 @@ bool XiaomiGateway::WriteToHardware(const char * pdata, const unsigned char leng
 			_log.Log(LOG_STATUS, "XiaomiGateway: level %d", xcmd->level);
 			int level = xcmd->level;
 			if (level > 0) { level = level / 10; }
+			else { level = -1; }
 			std::stringstream ss;
 			ss << level;
 			sid.insert(0, m_GatewayPrefix);
@@ -433,7 +434,7 @@ void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::str
 				}
 				else if (Name == "Xiaomi Gateway Audio") {
 					//for the Gateway Audio
-					m_sql.SetDeviceOptions(atoi(Idx.c_str()), m_sql.BuildDeviceOptions("SelectorStyle:0;LevelNames:Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5|Alarm 6|Alarm 7|Alarm 8", false));
+					m_sql.SetDeviceOptions(atoi(Idx.c_str()), m_sql.BuildDeviceOptions("SelectorStyle:0;LevelNames:Off|S1|S2|S3|S4|S5|S6|S7|S8|S9|S10|S11", false));
 				}
 			}
 		}
@@ -817,7 +818,7 @@ void XiaomiGateway::xiaomi_udp_server::handle_receive(const boost::system::error
 					}
 					std::string voltage = root2["voltage"].asString();
 					int battery = 255;
-					if (voltage != "") {
+					if (voltage != "" && voltage != "3600") {
 						battery = ((atoi(voltage.c_str()) - 2200) / 10);
 					}
 					if (type != STYPE_END) {
