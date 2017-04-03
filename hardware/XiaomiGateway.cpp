@@ -368,13 +368,13 @@ void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::str
 	if (Name == "Xiaomi Gateway Audio") {
 		xcmd.unitcode = 2;
 	}
-	if (messagetype != "heartbeat") {		
-		if (switchtype == STYPE_Selector) {
-			xcmd.subtype = sSwitchTypeSelector;
-			if (level > 0) {
-				xcmd.level = level;
-			}
+	if (switchtype == STYPE_Selector) {
+		xcmd.subtype = sSwitchTypeSelector;
+		if (level > 0) {
+			xcmd.level = level;
 		}
+	}
+	if (messagetype != "heartbeat") {
 		if (bIsOn) {
 			xcmd.cmnd = gswitch_sOn;
 		}
