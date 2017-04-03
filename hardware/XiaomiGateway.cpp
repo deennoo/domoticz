@@ -364,10 +364,7 @@ void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::str
 	xcmd.id = sID;
 	xcmd.type = pTypeGeneralSwitch;
 	xcmd.subtype = sSwitchGeneralSwitch;
-	xcmd.unitcode = 1;
-	if (battery > 0) {
-		xcmd.battery_level = battery;
-	}
+	xcmd.unitcode = 1;	
 	if (Name == "Xiaomi Gateway Audio") {
 		xcmd.unitcode = 2;
 	}
@@ -387,7 +384,7 @@ void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::str
 	}
 	//check if this switch is already in the database
 	std::vector<std::vector<std::string> > result;
-	result = m_sql.safe_query("SELECT nValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Type==%d) ", m_HwdID, ID.c_str(), pTypeGeneralSwitch);
+	result = m_sql.safe_query("SELECT nValue, BatteryLevel FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Type==%d) ", m_HwdID, ID.c_str(), pTypeGeneralSwitch);
 	if (result.size() < 1)
 	{
 		_log.Log(LOG_STATUS, "XiaomiGateway: New Switch Device Found (%s)", str.c_str());
@@ -446,12 +443,15 @@ void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::str
 			xcmd.unitcode = 2;
 		}
 		int nvalue = atoi(result[0][0].c_str());
-		//if ((((bIsOn && nvalue == 0) || (bIsOn == false && nvalue == 1))) && (messagetype != "heartbeat")) {
-		//if (messagetype != "heartbeat") {
-			if ((((bIsOn && nvalue == 0) || (bIsOn == false && nvalue == 1))) || (switchtype == STYPE_Selector)) {
-				m_mainworker.PushAndWaitRxMessage(this, (const unsigned char *)&xcmd, NULL, battery);
-			}
-		//}		
+		int BatteryLevel = atoi(result[0][1].c_str());		
+		if (battery != 255) {
+			BatteryLevel = battery;
+			xcmd.battery_level = battery;			
+		}
+		
+		if ((((bIsOn && nvalue == 0) || (bIsOn == false && nvalue == 1))) || (switchtype == STYPE_Selector)) {
+			m_mainworker.PushAndWaitRxMessage(this, (const unsigned char *)&xcmd, NULL, BatteryLevel);
+		}	
 		else {
 #ifdef _DEBUG
 			_log.Log(LOG_STATUS, "XiaomiGateway: not updating Domoticz for switch as no change from last state");
@@ -819,7 +819,7 @@ void XiaomiGateway::xiaomi_udp_server::handle_receive(const boost::system::error
 						type = STYPE_PushOn;
 					}
 					std::string voltage = root2["voltage"].asString();
-					int battery = -1; // 255;
+					int battery = 255;
 					if (voltage != "" && voltage != "3600") {
 						battery = ((atoi(voltage.c_str()) - 2200) / 10);
 					}
