@@ -818,7 +818,7 @@ void XiaomiGateway::xiaomi_udp_server::handle_receive(const boost::system::error
 						type = STYPE_PushOn;
 					}
 					std::string voltage = root2["voltage"].asString();
-					int battery = 255;
+					int battery = -1; // 255;
 					if (voltage != "" && voltage != "3600") {
 						battery = ((atoi(voltage.c_str()) - 2200) / 10);
 					}
