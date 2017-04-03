@@ -365,18 +365,19 @@ void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::str
 	xcmd.type = pTypeGeneralSwitch;
 	xcmd.subtype = sSwitchGeneralSwitch;
 	xcmd.unitcode = 1;
-	xcmd.battery_level = battery;
+	if (battery > 0) {
+		xcmd.battery_level = battery;
+	}
 	if (Name == "Xiaomi Gateway Audio") {
 		xcmd.unitcode = 2;
 	}
-	if (messagetype != "heartbeat") {
+	if (messagetype != "heartbeat") {		
 		if (switchtype == STYPE_Selector) {
 			xcmd.subtype = sSwitchTypeSelector;
 			if (level > 0) {
 				xcmd.level = level;
 			}
 		}
-
 		if (bIsOn) {
 			xcmd.cmnd = gswitch_sOn;
 		}
