@@ -369,20 +369,21 @@ void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::str
 	if (Name == "Xiaomi Gateway Audio") {
 		xcmd.unitcode = 2;
 	}
-	if (switchtype == STYPE_Selector) {
-		xcmd.subtype = sSwitchTypeSelector;
-		if (level > 0) {
-			xcmd.level = level;
+	if (messagetype != "heartbeat") {
+		if (switchtype == STYPE_Selector) {
+			xcmd.subtype = sSwitchTypeSelector;
+			if (level > 0) {
+				xcmd.level = level;
+			}
+		}
+
+		if (bIsOn) {
+			xcmd.cmnd = gswitch_sOn;
+		}
+		else {
+			xcmd.cmnd = gswitch_sOff;
 		}
 	}
-
-	if (bIsOn) {
-		xcmd.cmnd = gswitch_sOn;
-	}
-	else {
-		xcmd.cmnd = gswitch_sOff;
-	}
-
 	//check if this switch is already in the database
 	std::vector<std::vector<std::string> > result;
 	result = m_sql.safe_query("SELECT nValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Type==%d) ", m_HwdID, ID.c_str(), pTypeGeneralSwitch);
@@ -445,11 +446,11 @@ void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::str
 		}
 		int nvalue = atoi(result[0][0].c_str());
 		//if ((((bIsOn && nvalue == 0) || (bIsOn == false && nvalue == 1))) && (messagetype != "heartbeat")) {
-		if (messagetype != "heartbeat") {
+		//if (messagetype != "heartbeat") {
 			if ((((bIsOn && nvalue == 0) || (bIsOn == false && nvalue == 1))) || (switchtype == STYPE_Selector)) {
 				m_mainworker.PushAndWaitRxMessage(this, (const unsigned char *)&xcmd, NULL, battery);
 			}
-		}		
+		//}		
 		else {
 #ifdef _DEBUG
 			_log.Log(LOG_STATUS, "XiaomiGateway: not updating Domoticz for switch as no change from last state");
