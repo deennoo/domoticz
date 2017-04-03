@@ -433,7 +433,7 @@ void XiaomiGateway::InsertUpdateSwitch(const std::string &nodeid, const std::str
 				}
 				else if (Name == "Xiaomi Gateway Audio") {
 					//for the Gateway Audio
-					m_sql.SetDeviceOptions(atoi(Idx.c_str()), m_sql.BuildDeviceOptions("SelectorStyle:0;LevelNames:Off|S1|S2|S3|S4|S5|S6|S7|S8|S9|S10|S11", false));
+					m_sql.SetDeviceOptions(atoi(Idx.c_str()), m_sql.BuildDeviceOptions("SelectorStyle:1;LevelNames:Off|Police Siren 2|Accident Tone|Missile CountDown|Ghost|Sniper|War|Air Strike|Barking Dogs|S9|Doorbell Ring Tone|Knock On Door", false));
 				}
 			}
 		}
